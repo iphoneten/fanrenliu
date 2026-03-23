@@ -1,6 +1,7 @@
 import {
   command_rows,
   equipment_rows,
+  event_rows,
   map_rows,
   material_rows,
   monster_rows,
@@ -338,3 +339,91 @@ export const ACTION_MODE_CONFIG = {
   breakthrough: "repeat",
   exportSave: "single",
 };
+
+export const ACTION_LABEL_CONFIG = {
+  ...Object.fromEntries(
+    COMMAND_CONFIG.filter((row) => row.action).map((row) => [row.action, row.name])
+  ),
+  move: "离开此地",
+  alchemy: "炼丹",
+  breakthrough: "突破",
+  exportSave: "导出存档",
+};
+
+function normalizeEventRewardText(text) {
+  const raw = String(text || "").trim();
+  if (!raw || raw === "无") return raw;
+  return raw
+    .split(";")
+    .map((part) => {
+      const trimmed = part.trim();
+      const itemMatch = trimmed.match(/^(\w+):([^,:=]+),(.+)$/);
+      if (itemMatch) {
+        return `${itemMatch[1]}:${itemMatch[2]}:${itemMatch[3]}`;
+      }
+      return trimmed;
+    })
+    .join(";");
+}
+
+function normalizeEventFlagText(text) {
+  const raw = String(text || "").trim();
+  if (!raw || raw === "无") return raw;
+  return raw
+    .split(";")
+    .map((part) => {
+      const trimmed = part.trim();
+      const flagMatch = trimmed.match(/^(\w+):([^:=]+)=(.+)$/);
+      if (flagMatch) {
+        return `${flagMatch[1]}:${flagMatch[2]}:${flagMatch[3]}`;
+      }
+      return trimmed;
+    })
+    .join(";");
+}
+
+function normalizeEventConditionText(text) {
+  const raw = String(text || "").trim();
+  if (!raw || raw === "无条件" || raw === "无") return raw;
+  return raw.replace(/(?<![<>=!])=(?![<>=])/g, "==");
+}
+
+export const EVENT_CONFIG = event_rows.map((row) => ({
+  id: row["事件ID (EventID)"] || "",
+  command: inferEventCommand(row["事件ID (EventID)"] || ""),
+  weight: parseNumber(row["触发权重/概率"], 0),
+  condition: normalizeEventConditionText(row["前置条件 (Condition)"] || ""),
+  text: row["事件文本 (Log Text)"] || "",
+  rewards: normalizeEventRewardText(row["奖励/产出 (Reward)"] || ""),
+  flags: normalizeEventFlagText(row["状态变更 (Flags)"] || ""),
+  type: inferEventType(row["事件文本 (Log Text)"] || ""),
+}));
+
+function inferEventCommand(eventId) {
+  if (eventId.startsWith("E_6001_")) {
+    return "villageChat";
+  }
+  if (eventId.startsWith("E_6002_")) {
+    return "backhillSearch";
+  }
+  if (eventId.startsWith("E_6003_")) {
+    return "townPawn";
+  }
+  if (eventId.startsWith("E_6005_")) {
+    return "awakenAtTainan";
+  }
+  return "";
+}
+
+function inferEventType(text) {
+  if (text.includes("[🌟奇遇]") || text.includes("[主线]")) {
+    return "positive";
+  }
+  if (text.includes("[传闻]")) {
+    return "normal";
+  }
+  if (text.includes("[⚠️")) {
+    return "warning";
+  }
+  return "normal";
+}

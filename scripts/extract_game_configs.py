@@ -24,6 +24,7 @@ FILES = {
     "equipment_rows": "装备列表.xlsx",
     "map_rows": "游戏地图配置.xlsx",
     "command_rows": "指令配置总表.xlsx",
+    "event_rows": "事件配置表.xlsx",
 }
 
 
@@ -54,7 +55,10 @@ def load_sheet_rows(path: Path) -> list[dict[str, str]]:
             for cell in row.findall("a:c", NS):
                 cell_type = cell.attrib.get("t")
                 value_node = cell.find("a:v", NS)
-                if value_node is None:
+                inline_node = cell.find("a:is/a:t", NS)
+                if cell_type == "inlineStr" and inline_node is not None:
+                    values.append(inline_node.text or "")
+                elif value_node is None:
                     values.append("")
                 elif cell_type == "s":
                     values.append(shared_strings[int(value_node.text)])

@@ -930,3 +930,62 @@ export const command_rows = [
     "状态机切换": "切至 EXPLORING"
   }
 ];
+
+export const event_rows = [
+  {
+    "事件ID (EventID)": "E_6001_Rumor1",
+    "触发权重/概率": "50.0",
+    "前置条件 (Condition)": "无",
+    "事件文本 (Log Text)": "[传闻] 村长叹气，二狗子去了野狼帮。",
+    "奖励/产出 (Reward)": "无",
+    "状态变更 (Flags)": "无"
+  },
+  {
+    "事件ID (EventID)": "E_6002_Main1",
+    "触发权重/概率": "100.0",
+    "前置条件 (Condition)": "count:backhill>=5",
+    "事件文本 (Log Text)": "[🌟奇遇] 你跌入山洞，发现两具尸体...",
+    "奖励/产出 (Reward)": "item:长春功残篇,1;item:下品灵石,1;item:灰扑扑小物件,1;prop:insight,10",
+    "状态变更 (Flags)": "flag:foundManual=1"
+  },
+  {
+    "事件ID (EventID)": "E_6002_Normal",
+    "触发权重/概率": "80.0",
+    "前置条件 (Condition)": "flag:foundManual=1",
+    "事件文本 (Log Text)": "你在后山搜寻，一无所获。",
+    "奖励/产出 (Reward)": "无",
+    "状态变更 (Flags)": "无"
+  },
+  {
+    "事件ID (EventID)": "E_6003_Main1",
+    "触发权重/概率": "100",
+    "前置条件 (Condition)": "prop:realmIndex>=1;item:下品灵石>=1;flag:pawnHintDone==0",
+    "事件文本 (Log Text)": "[主线] 你将发光的石头递给朝奉。老朝奉看清后猛地一哆嗦：“小兄弟，你身上有微弱的灵气...这是仙家灵石。这凡间留不住你，一直往北走，穿过迷雾黑原，去修仙者集市太南谷吧。但黑原凶险，切记备好连弩防身！”",
+    "奖励/产出 (Reward)": "无",
+    "状态变更 (Flags)": "flag:pawnHintDone:1"
+  },
+  {
+    "事件ID (EventID)": "E_6003_Normal",
+    "触发权重/概率": "100",
+    "前置条件 (Condition)": "flag:pawnHintDone==1",
+    "事件文本 (Log Text)": "老朝奉低声提醒你：黑原里真正要命的不是路，是里面活着的东西。",
+    "奖励/产出 (Reward)": "无",
+    "状态变更 (Flags)": "无"
+  },
+  {
+    "事件ID (EventID)": "E_6003_Blocked",
+    "触发权重/概率": "100",
+    "前置条件 (Condition)": "prop:realmIndex<1||item:下品灵石<1",
+    "事件文本 (Log Text)": "老朝奉只是看了你一眼，懒得与你多谈。你还未真正踏上修仙路。",
+    "奖励/产出 (Reward)": "无",
+    "状态变更 (Flags)": "无"
+  },
+  {
+    "事件ID (EventID)": "E_6005_Main1",
+    "触发权重/概率": "100",
+    "前置条件 (Condition)": "flag:chapterFinished==0",
+    "事件文本 (Log Text)": "[主线] 你站在阵法外，浓郁的灵气让你浑身舒泰。突然！你怀中那灰扑扑小物件疯狂发热，贪婪吸收灵气！石皮剥落，光芒大作！",
+    "奖励/产出 (Reward)": "prop:lifespan:120",
+    "状态变更 (Flags)": "flag:awakenedHand:1;flag:chapterFinished:1"
+  }
+];

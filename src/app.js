@@ -1,5 +1,5 @@
 import {
-  ACTION_META,
+  ACTION_LABEL_CONFIG,
   ACTION_MODE_CONFIG,
   awakenAtTainan,
   alchemy,
@@ -41,9 +41,7 @@ import {
 
 const STORAGE_KEY = "fanren-save-v2";
 const ACTION_TICK_MS = 1200;
-const ACTION_LABELS = Object.fromEntries(
-  Object.entries(ACTION_META).map(([key, value]) => [key, value.label])
-);
+const ACTION_LABELS = ACTION_LABEL_CONFIG;
 
 const elements = {
   name: document.querySelector("#player-name"),
@@ -444,6 +442,12 @@ function perform(action) {
 
 function executeActionTick(action) {
   perform(action);
+  if (player.pendingInterruptMessage) {
+    const message = player.pendingInterruptMessage;
+    player.pendingInterruptMessage = "";
+    stopCurrentAction(message);
+    return;
+  }
   if (player.hp <= 0) {
     stopCurrentAction("你已无力继续，持续行动终止。");
   }

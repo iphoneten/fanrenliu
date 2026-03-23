@@ -1,16 +1,18 @@
 import {
+  ACTION_LABEL_CONFIG,
   ACTION_MODE_CONFIG,
   COMMAND_CONFIG,
   COMBAT_ITEM_CONFIG,
   CULTIVATION_BASE_RATE,
   DEFAULT_INVENTORY,
   MAP_CONFIG,
+  EVENT_CONFIG,
   PILL_CONFIG,
   REALM_CONFIG,
   MONSTER_CONFIG,
   EQUIPMENT_CONFIG,
 } from "./game-data.js";
-import { ACTION_META, CHAPTER_MONSTERS, STORY_TEXT, VILLAGE_GOSSIPS } from "./story-data.js";
+import { CHAPTER_MONSTERS, STORY_TEXT, VILLAGE_GOSSIPS } from "./story-data.js";
 
 export const REALMS = REALM_CONFIG;
 
@@ -21,15 +23,6 @@ const MAP_ID_ALIAS = {
   "map-6004": "moor",
   "map-6005": "tainan",
   "map-6006": "tainan-market",
-};
-
-const MAP_DESCRIPTION_OVERRIDES = {
-  village: "偏远山村，灵气几乎断绝，只能先想办法活下去。",
-  backhill: "荒坟遍野、怪雾缭绕，是凡人接触仙缘的第一道门槛。",
-  town: "商旅歇脚之地，可以打猎换钱，购买凡俗药散与器物。",
-  moor: "黑雾终年不散，穿越它本身就是赌命。",
-  tainan: "真正的修仙界入口，坊市、散修、残酷与机缘都在这里。",
-  "tainan-market": "太南谷坊市，散修云集，私斗被严禁。",
 };
 
 function mapAliasFromId(id) {
@@ -119,13 +112,13 @@ export const MAP_NODES = MAP_CONFIG.map((row) => ({
   name: row.name,
   zone: row.zone,
   costMonths: row.moveCostMonths,
-  description: MAP_DESCRIPTION_OVERRIDES[mapAliasFromId(row.id)] || row.note || row.commandsText || row.name,
+  description: row.note || row.commandsText || row.name,
   actions: commandActionsForMap(row.id),
   adjacent: row.adjacent.map(mapAliasFromId),
   auraMultiplier: row.auraMultiplier,
 }));
 
-export { ACTION_META };
+export { ACTION_LABEL_CONFIG };
 export { ACTION_MODE_CONFIG };
 
 const HANDS = [
@@ -233,6 +226,125 @@ function createLifespanCap(realmIndex) {
 function pushLog(player, text, type = "normal") {
   player.logs.unshift({ text, type });
   player.logs = player.logs.slice(0, 80);
+}
+
+function shouldInterruptOnEvent(eventConfig) {
+  const text = eventConfig.text || "";
+  return eventConfig.id.includes("_Main") || text.includes("[🌟奇遇]") || text.includes("[主线]");
+}
+
+function getCounterValue(player, key) {
+  const aliases = {
+    backhill: "backhillSearches",
+    wolf: "wolfKills",
+    moor: "moorSteps",
+  };
+  const realKey = aliases[key] || key;
+  return player.counters?.[realKey] || 0;
+}
+
+export function evaluateCondition(player, conditionStr) {
+  if (!conditionStr || conditionStr === "无条件" || conditionStr === "无") {
+    return true;
+  }
+
+  const andGroups = conditionStr.split(";");
+  for (const group of andGroups) {
+    if (!group.trim()) {
+      continue;
+    }
+    const orConds = group.split("||");
+    let groupPassed = false;
+
+    for (const cond of orConds) {
+      const match = cond.trim().match(/(prop|item|flag|count):(.+?)(>=|<=|>|<|==|!=)(.+)/);
+      if (!match) {
+        continue;
+      }
+
+      const [, type, key, op, rawVal] = match;
+      const expected = Number(rawVal);
+      let actual = 0;
+
+      if (type === "prop") actual = player[key] || 0;
+      if (type === "item") actual = player.inventory[key] || 0;
+      if (type === "flag") actual = player.storyFlags[key] ? 1 : 0;
+      if (type === "count") actual = getCounterValue(player, key);
+
+      let passed = false;
+      if (op === ">=") passed = actual >= expected;
+      if (op === "<=") passed = actual <= expected;
+      if (op === ">") passed = actual > expected;
+      if (op === "<") passed = actual < expected;
+      if (op === "==") passed = actual === expected;
+      if (op === "!=") passed = actual !== expected;
+
+      if (passed) {
+        groupPassed = true;
+        break;
+      }
+    }
+
+    if (!groupPassed) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function applyEventRewards(player, eventConfig) {
+  if (eventConfig.rewards && eventConfig.rewards !== "无") {
+    eventConfig.rewards.split(";").forEach((rewardStr) => {
+      if (!rewardStr) return;
+      const [type, key, rawVal] = rewardStr.split(":");
+      const numVal = Number(rawVal || 0);
+      if (!type || !key) return;
+      if (type === "item") {
+        player.inventory[key] = (player.inventory[key] || 0) + numVal;
+      } else if (type === "prop") {
+        if (key === "lifespan") player.lifespan = Math.max(player.lifespan, numVal);
+        else player[key] = (player[key] || 0) + numVal;
+      }
+    });
+  }
+
+  if (eventConfig.flags && eventConfig.flags !== "无") {
+    eventConfig.flags.split(";").forEach((flagStr) => {
+      if (!flagStr) return;
+      const [type, key, rawVal] = flagStr.split(":");
+      if (!type || !key) return;
+      if (type === "flag") player.storyFlags[key] = rawVal === "1" || rawVal === "true";
+    });
+  }
+}
+
+function dispatchEvent(player, commandAction) {
+  const validEvents = EVENT_CONFIG.filter(
+    (event) => event.command === commandAction && evaluateCondition(player, event.condition)
+  );
+  if (validEvents.length === 0) {
+    return null;
+  }
+
+  const totalWeight = validEvents.reduce((sum, event) => sum + event.weight, 0);
+  let roll = Math.random() * totalWeight;
+  let selectedEvent = validEvents[validEvents.length - 1];
+
+  for (const event of validEvents) {
+    roll -= event.weight;
+    if (roll <= 0) {
+      selectedEvent = event;
+      break;
+    }
+  }
+
+  pushLog(player, selectedEvent.text, selectedEvent.type);
+  applyEventRewards(player, selectedEvent);
+  if (shouldInterruptOnEvent(selectedEvent)) {
+    player.pendingInterruptMessage = "触发关键事件，当前持续行动已中断。";
+  }
+  return selectedEvent;
 }
 
 function spendMonths(player, months, reason) {
@@ -501,6 +613,9 @@ function normalize(player) {
   if (!player.hand) {
     player.hand = randomFrom(HANDS);
   }
+  if (!("pendingInterruptMessage" in player)) {
+    player.pendingInterruptMessage = "";
+  }
   player.hp = clamp(player.hp, 0, getMaxHp(player));
   player.spirit = clamp(player.spirit, 0, getMaxSpirit(player));
   checkLifespan(player);
@@ -563,7 +678,10 @@ export function villageRest(player) {
 
 export function villageChat(player) {
   spendMonths(player, 0.02, "你在村口闲聊");
-  pushLog(player, `[传闻] ${randomFrom(VILLAGE_GOSSIPS)}`);
+  const event = dispatchEvent(player, "villageChat");
+  if (!event) {
+    pushLog(player, `[传闻] ${randomFrom(VILLAGE_GOSSIPS)}`);
+  }
   return normalize(player);
 }
 
@@ -584,15 +702,8 @@ export function backhillSearch(player) {
   spendMonths(player, 0.03, "你在无名后山进山搜寻");
   player.counters.backhillSearches += 1;
 
-  if (!player.storyFlags.foundManual && (player.counters.backhillSearches >= 5 || player.counters.wolfKills >= 3)) {
-    player.storyFlags.foundManual = true;
-    player.insight += 10;
-    player.inventory["《长春功》残篇"] = 1;
-    player.inventory["下品灵石"] = (player.inventory["下品灵石"] || 0) + 1;
-    player.inventory["灰扑扑小物件"] = 1;
-    pushLog(player, `[🌟奇遇] ${STORY_TEXT.bloodFate}`, "positive");
-    pushLog(player, "你选择搜刮包裹，获得《长春功》残篇、下品灵石 x1、灰扑扑小物件。", "positive");
-  } else {
+  const event = dispatchEvent(player, "backhillSearch");
+  if (!event) {
     const monster = randomFrom(CHAPTER_MONSTERS.filter((m) => m.nodeId === "backhill"));
     const hurt = monster.attack;
     player.hp -= hurt;
@@ -660,13 +771,10 @@ export function townSmith(player) {
 
 export function townPawn(player) {
   spendMonths(player, 0.02, "你走进当铺探问消息");
-  if (player.realmIndex < 1 || !(player.inventory["下品灵石"] > 0)) {
-    pushLog(player, "老朝奉只是看了你一眼，懒得与你多谈。你还未真正踏上修仙路。");
-  } else if (!player.storyFlags.pawnHintDone) {
-    player.storyFlags.pawnHintDone = true;
-    pushLog(player, `[主线] ${STORY_TEXT.pawnHint}`, "positive");
-  } else {
-    pushLog(player, "老朝奉低声提醒你：黑原里真正要命的不是路，是里面活着的东西。");
+
+  const event = dispatchEvent(player, "townPawn");
+  if (!event) {
+    pushLog(player, "当前未配置【当铺探问】对应事件。", "warning");
   }
   return normalize(player);
 }
@@ -692,12 +800,10 @@ export function awakenAtTainan(player) {
   if (player.currentNodeId !== "tainan" || player.storyFlags.chapterFinished) {
     return normalize(player);
   }
-  player.storyFlags.chapterFinished = true;
-  player.storyFlags.awakenedHand = true;
-  player.lifespan = Math.max(player.lifespan, 120);
-  pushLog(player, `[主线] ${STORY_TEXT.awakening}`, "positive");
-  pushLog(player, `【获得：${player.hand.name}】${player.hand.description}`, "positive");
-  pushLog(player, "[系统] 第一卷：凡人俗世 —— 完。你的寿元大限更新为 120 岁。", "positive");
+  const event = dispatchEvent(player, "awakenAtTainan");
+  if (!event) {
+    pushLog(player, "当前未配置【太南谷觉醒】对应事件。", "warning");
+  }
   return normalize(player);
 }
 
