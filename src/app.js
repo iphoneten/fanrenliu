@@ -344,35 +344,38 @@ function render() {
   });
 
   document.querySelectorAll("[data-action]").forEach((button) => {
-    // ===== 渲染斗法面板状态 =====
-    const isCombatActive = player.combat && player.combat.isActive;
+    const action = button.dataset.action;
+    button.classList.toggle("is-running", action === activeAction);
+  });
 
-    if (isCombatActive) {
-      activePageTab = "combat";
-      elements.pageTabs.forEach(tab => tab.classList.toggle("is-active", tab.dataset.pageTab === "combat"));
-      elements.pageMain.classList.remove("is-active");
-      elements.pageCave.classList.remove("is-active");
-      elements.pageCombat.classList.add("is-active");
+  // ===== 渲染斗法面板状态 =====
+  const isCombatActive = player.combat && player.combat.isActive;
 
-      const enemy = player.combat.enemy;
-      const combatSide = document.querySelector(".combat-side");
-      combatSide.innerHTML = `
+  if (isCombatActive) {
+    activePageTab = "combat";
+    elements.pageTabs.forEach(tab => tab.classList.toggle("is-active", tab.dataset.pageTab === "combat"));
+    elements.pageMain.classList.remove("is-active");
+    elements.pageCave.classList.remove("is-active");
+    elements.pageCombat.classList.add("is-active");
+
+    const enemy = player.combat.enemy;
+    const combatSide = document.querySelector(".combat-side");
+    combatSide.innerHTML = `
       <span>敌方</span>
       <strong>${enemy.name}</strong>
       <p>状态：❤️ ${enemy.currentHp > enemy.hp * 0.5 ? '尚有余力' : '气息萎靡'} (约 ${Math.ceil(enemy.currentHp / enemy.hp * 100)}%)</p>
       <p>特性：${enemy.trait || '无'}</p>
     `;
 
-      const combatLog = document.querySelector(".combat-log");
-      combatLog.innerHTML = player.combat.logs.slice(-5).map(l => `<div>${l}</div>`).join("");
+    const combatLog = document.querySelector(".combat-log");
+    combatLog.innerHTML = player.combat.logs.slice(-5).map(l => `<div>${l}</div>`).join("");
 
-      document.querySelectorAll("[data-combat-action]").forEach(btn => btn.disabled = false);
-    } else {
-      document.querySelectorAll("[data-combat-action]").forEach(btn => btn.disabled = true);
-      document.querySelector(".combat-side").innerHTML = `<span>安全</span><strong>当前无战斗</strong><p>你暂时安全，可以安心修炼或探索。</p>`;
-      document.querySelector(".combat-log").innerHTML = ``;
-    }
-  });
+    document.querySelectorAll("[data-combat-action]").forEach(btn => btn.disabled = false);
+  } else {
+    document.querySelectorAll("[data-combat-action]").forEach(btn => btn.disabled = true);
+    document.querySelector(".combat-side").innerHTML = `<span>安全</span><strong>当前无战斗</strong><p>你暂时安全，可以安心修炼或探索。</p>`;
+    document.querySelector(".combat-log").innerHTML = ``;
+  }
 }
 
 function perform(action) {
@@ -417,6 +420,10 @@ function perform(action) {
     player = townPawn(player);
   } else if (action === "moorTraverse") {
     player = moorTraverse(player);
+  } else if (action === "tainanMarket") {
+    player = tainanMarket(player);
+  } else if (action === "leaveBlackMarket") {
+    player = leaveBlackMarket(player);
   } else if (action === "move") {
     player = moveForward(player);
     player = awakenAtTainan(player);
@@ -426,13 +433,6 @@ function perform(action) {
     player = alchemy(player);
   } else if (action === "breakthrough") {
     player = breakthrough(player);
-  } else if (action === "moorTraverse") {
-    player = moorTraverse(player);
-    // ===== 在 moorTraverse 的下面加上这两行 =====
-  } else if (action === "tainanMarket") {
-    player = tainanMarket(player);
-  } else if (action === "leaveBlackMarket") {
-    player = leaveBlackMarket(player);
   } else if (action === "exportSave") {
     exportSave();
     return;

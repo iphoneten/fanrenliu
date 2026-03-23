@@ -8,6 +8,7 @@ import {
   PILL_CONFIG,
   REALM_CONFIG,
   MONSTER_CONFIG,
+  EQUIPMENT_CONFIG,
 } from "./game-data.js";
 import { ACTION_META, CHAPTER_MONSTERS, STORY_TEXT, VILLAGE_GOSSIPS } from "./story-data.js";
 
@@ -316,6 +317,31 @@ export function createNewPlayer(name = "韩立") {
   return normalize(player);
 }
 
+// 通用：根据装备名称从配置表中生成一件独立的装备实体
+export function generateEquipmentByName(name) {
+  // 从配置总表中查找基础数据
+  const baseDef = EQUIPMENT_CONFIG.find(item => item.name === name);
+  if (!baseDef) {
+    console.error(`装备配置库中未找到: ${name}`);
+    return null;
+  }
+
+  // 生成带有唯一 ID 的实例
+  return {
+    id: `eq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    baseId: baseDef.id,   // 记录来源于哪条配置ID
+    name: baseDef.name,
+    slot: baseDef.slot,
+    type: baseDef.type,
+    attack: baseDef.attack || 0,
+    defense: baseDef.defense || 0,
+    hp: 0,
+    spirit: 0,
+    manaCost: baseDef.manaCost || 0,
+    senseCost: baseDef.senseCost || 0
+  };
+}
+
 export function getRealmName(player) {
   return REALMS[player.realmIndex]?.name || REALMS[0].name;
 }
@@ -602,19 +628,33 @@ export function townSell(player) {
 
 export function townSmith(player) {
   spendMonths(player, 0.02, "你去了一趟铁匠铺");
-  if (!(player.inventory["精铁匕首"] || 0) && player.silver >= 30) {
+
+  // 通过名称判断是否已经拥有
+  const hasDagger = player.equipmentBag.some(eq => eq.name === "精铁匕首") ||
+    (getEquippedItem(player, "weapon")?.name === "精铁匕首");
+
+  const hasCrossbow = player.equipmentBag.some(eq => eq.name === "凡人连弩") ||
+    (getEquippedItem(player, "weapon")?.name === "凡人连弩");
+
+  if (!hasDagger && player.silver >= 30) {
     player.silver -= 30;
-    player.inventory["精铁匕首"] = 1;
-    player.attack += 5;
-    pushLog(player, "你花 30 两买下精铁匕首，攻击 +5。", "positive");
-  } else if (!(player.inventory["凡人连弩"] || 0) && player.silver >= 80) {
+    // 直接用工厂函数生成装备
+    const eq = generateEquipmentByName("精铁匕首");
+    if (eq) player.equipmentBag.push(eq);
+
+    pushLog(player, "你花 30 两买下精铁匕首，已放入【装备背包】，请前往洞府手动佩戴。", "positive");
+
+  } else if (!hasCrossbow && player.silver >= 80) {
     player.silver -= 80;
-    player.inventory["凡人连弩"] = 1;
-    player.attack += 10;
-    pushLog(player, "你花 80 两买下凡人连弩，攻击 +10。", "positive");
+    const eq = generateEquipmentByName("凡人连弩");
+    if (eq) player.equipmentBag.push(eq);
+
+    pushLog(player, "你花 80 两买下凡人连弩，已放入【装备背包】，请前往洞府手动佩戴。", "positive");
+
   } else {
     pushLog(player, "铁匠铺里要么你已买过顺手兵器，要么手头银两不足。");
   }
+
   return normalize(player);
 }
 
@@ -637,7 +677,7 @@ export function moorTraverse(player) {
   if (player.counters.moorSteps < 3) {
     return triggerCombat(player, 1006); // 触发瘴气野狗
   }
-  
+
   if (player.realmIndex < 1) {
     pushLog(player, "血线蛇自迷雾中暴起，你尚未踏入炼气，只能仓皇退走。", "warning");
     player.hp -= 25;
@@ -699,8 +739,8 @@ export function alchemy(player) {
   const handBonus = player.hand.bonus.alchemy || 0;
   const rate = clamp(
     (baseRecipe + player.alchemySkill * 0.5 + fireQuality * 10 + handBonus * 2) *
-      (1 + player.comprehension / 100) -
-      15,
+    (1 + player.comprehension / 100) -
+    15,
     5,
     92
   );
@@ -952,7 +992,7 @@ export function parseSave(raw) {
 export function triggerCombat(player, monsterId) {
   const monsterData = MONSTER_CONFIG.find((m) => m.id === monsterId);
   if (!monsterData) return normalize(player);
-  
+
   player.combat = {
     isActive: true,
     enemy: { ...monsterData, currentHp: monsterData.hp },
@@ -964,7 +1004,7 @@ export function triggerCombat(player, monsterId) {
 
 export function executeCombatAction(player, actionType) {
   if (!player.combat || !player.combat.isActive) return player;
-  
+
   const enemy = player.combat.enemy;
   let playerDamage = 0;
   let actionLog = "";
@@ -976,7 +1016,7 @@ export function executeCombatAction(player, actionType) {
         actionLog = "法力不足 5 点，火弹术施展失败！";
       } else {
         player.spirit -= 5;
-        playerDamage = 20; 
+        playerDamage = 20;
         actionLog = `你施展火弹术，一团烈火砸中对方，造成 ${playerDamage} 点真伤。`;
       }
       break;
@@ -1000,7 +1040,7 @@ export function executeCombatAction(player, actionType) {
         actionLog = "你储物袋中已无火龙符！";
       } else {
         player.inventory["火龙符"] -= 1;
-        playerDamage = 50; 
+        playerDamage = 50;
         actionLog = `你砸出一张火龙符！化作火龙吞噬对方，造成 ${playerDamage} 点伤害！`;
       }
       break;
@@ -1015,8 +1055,8 @@ export function executeCombatAction(player, actionType) {
       }
       break;
     case "blood_escape":
-      player.age += 5; 
-      player.maxHp = Math.floor(player.maxHp * 0.8); 
+      player.age += 5;
+      player.maxHp = Math.floor(player.maxHp * 0.8);
       player.hp = Math.min(player.hp, player.maxHp);
       actionLog = "你咬破舌尖施展血遁术！损失 5 年寿元与气血本源，化作血光遁走！";
       escaped = true;
@@ -1050,7 +1090,7 @@ export function executeCombatAction(player, actionType) {
   const finalEnemyDmg = Math.max(1, enemy.attack - def);
   player.hp -= finalEnemyDmg;
   player.combat.logs.push(`> [敌] ${enemy.name} 发起反击，造成 ${finalEnemyDmg} 点伤害。`);
-  
+
   if (enemy.trait.includes("剧毒")) {
     player.hp -= 2;
     player.combat.logs.push(`> [敌] 毒气侵体，额外损失 2 点气血。`);

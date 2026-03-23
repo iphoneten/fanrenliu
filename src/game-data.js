@@ -305,6 +305,9 @@ function inferCommandAction(name) {
     盘膝打坐: "cultivate",
     "🌟仙缘异宝": "openGoldFinger",
     "中断/出关": "stopAction",
+    逛散修地摊: "tainanMarket",
+    离开黑市: "leaveBlackMarket",
+    租地火室炼丹: "alchemy",
   };
   return mapping[name] || null;
 }
