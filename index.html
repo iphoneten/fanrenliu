@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -8,6 +9,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
   <div class="ambient ambient-a"></div>
   <div class="ambient ambient-b"></div>
@@ -32,58 +34,64 @@
     <section id="page-main" class="page-panel is-active">
       <section class="hub-layout">
         <aside class="panel left-rail">
-        <div class="panel-top-tag">
-          <span class="realm-badge">位于 <strong id="node-top-name">青石村</strong></span>
-          <span id="node-zone" class="realm-badge">安全区</span>
-        </div>
+          <div class="panel-top-tag">
+            <span class="realm-badge">位于 <strong id="node-top-name">青石村</strong></span>
+            <span id="node-zone" class="realm-badge">安全区</span>
+          </div>
 
-        <div class="identity-block">
-          <div class="identity-main">
-            <span id="aptitude-text">伪灵根</span>
-          </div>
-          <div class="identity-sub">
-            <span>灵根</span>
-            <strong id="roots-text">金20 / 木18</strong>
-          </div>
-        </div>
-
-        <div class="bar-grid">
-          <div class="resource-bar-card">
-            <div class="resource-head compact-head"><span>血</span><strong id="hp-text">0 / 0</strong></div>
-            <div class="progress-track blood"><div id="hp-bar" class="progress-fill"></div></div>
-          </div>
-          <div class="resource-bar-card">
-            <div class="resource-head compact-head"><span>法</span><strong id="spirit-bar-text">0 / 0</strong></div>
-            <div class="progress-track mana"><div id="spirit-bar" class="progress-fill"></div></div>
-          </div>
-          <div class="resource-bar-card">
-            <div class="resource-head compact-head"><span>修</span><strong id="cultivation-text">0 / 0</strong></div>
-            <div class="progress-track"><div id="cultivation-bar" class="progress-fill"></div></div>
-          </div>
-        </div>
-
-        <div class="key-stats">
-          <div class="stat-chip"><span>攻</span><strong id="attack-text">0</strong></div>
-          <div class="stat-chip"><span>防</span><strong id="defense-text">0</strong></div>
-          <div class="stat-chip"><span>声望</span><strong id="reputation-text">0</strong></div>
-          <div class="stat-chip"><span>悟性</span><strong id="comprehension-text">0</strong></div>
-          <div class="stat-chip"><span>体质</span><strong id="physique-text">0</strong></div>
-          <div class="stat-chip"><span>心性</span><strong id="mindset-text">0</strong></div>
-          <div class="stat-chip"><span>机缘</span><strong id="fortune-text">0</strong></div>
-        </div>
-
-        <div class="panel-subsection">
-          <div class="panel-subtitle">当前位置</div>
-          <button class="node-card node-toggle-card" id="node-toggle-btn" type="button">
-            <strong id="node-name">青石村</strong>
-            <p id="node-description">描述</p>
-            <div class="node-foot">
-              <span>下一站：<span id="next-node-text">无名后山 · 1 个月</span></span>
-              <span id="node-toggle-text">展开路线</span>
+          <div class="identity-block">
+            <div class="identity-main">
+              <span id="aptitude-text">伪灵根</span>
             </div>
-          </button>
-          <ol id="map-list" class="map-list collapsible-map"></ol>
-        </div>
+            <div class="identity-sub">
+              <span>灵根</span>
+              <strong id="roots-text">金20 / 木18</strong>
+            </div>
+          </div>
+
+          <div class="bar-grid">
+            <div class="resource-bar-card">
+              <div class="resource-head compact-head"><span>血</span><strong id="hp-text">0 / 0</strong></div>
+              <div class="progress-track blood">
+                <div id="hp-bar" class="progress-fill"></div>
+              </div>
+            </div>
+            <div class="resource-bar-card">
+              <div class="resource-head compact-head"><span>法</span><strong id="spirit-bar-text">0 / 0</strong></div>
+              <div class="progress-track mana">
+                <div id="spirit-bar" class="progress-fill"></div>
+              </div>
+            </div>
+            <div class="resource-bar-card">
+              <div class="resource-head compact-head"><span>修</span><strong id="cultivation-text">0 / 0</strong></div>
+              <div class="progress-track">
+                <div id="cultivation-bar" class="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="key-stats">
+            <div class="stat-chip"><span>攻</span><strong id="attack-text">0</strong></div>
+            <div class="stat-chip"><span>防</span><strong id="defense-text">0</strong></div>
+            <div class="stat-chip"><span>声望</span><strong id="reputation-text">0</strong></div>
+            <div class="stat-chip"><span>悟性</span><strong id="comprehension-text">0</strong></div>
+            <div class="stat-chip"><span>体质</span><strong id="physique-text">0</strong></div>
+            <div class="stat-chip"><span>心性</span><strong id="mindset-text">0</strong></div>
+            <div class="stat-chip"><span>机缘</span><strong id="fortune-text">0</strong></div>
+          </div>
+
+          <div class="panel-subsection">
+            <div class="panel-subtitle">当前位置</div>
+            <button class="node-card node-toggle-card" id="node-toggle-btn" type="button">
+              <strong id="node-name">青石村</strong>
+              <p id="node-description">描述</p>
+              <div class="node-foot">
+                <span>下一站：<span id="next-node-text">无名后山 · 1 个月</span></span>
+                <span id="node-toggle-text">展开路线</span>
+              </div>
+            </button>
+            <ol id="map-list" class="map-list collapsible-map"></ol>
+          </div>
         </aside>
       </section>
 
@@ -174,11 +182,11 @@
             <div>> 若要真正接入文档中的斗法系统，下一步需要实现神识探查、符箓、法器与血遁。</div>
           </div>
           <div class="combat-actions">
-            <button class="action-btn" disabled>驱使法器</button>
-            <button class="action-btn" disabled>施展法术</button>
-            <button class="action-btn" disabled>砸出符箓</button>
-            <button class="action-btn danger-btn" disabled>交出储物袋求饶</button>
-            <button class="action-btn danger-btn" disabled>施展血遁术</button>
+            <button class="action-btn" data-combat-action="artifact" disabled>驱使法器 (耗法力)</button>
+            <button class="action-btn" data-combat-action="spell" disabled>施展火弹术 (耗5法力)</button>
+            <button class="action-btn" data-combat-action="talisman" disabled>砸出火龙符 (耗符箓)</button>
+            <button class="action-btn danger-btn" data-combat-action="beg" disabled>交出灵石求饶 (破财免灾)</button>
+            <button class="action-btn danger-btn" data-combat-action="blood_escape" disabled>施展血遁术 (扣寿元)</button>
           </div>
         </div>
       </div>
@@ -214,4 +222,5 @@
 
   <script type="module" src="./src/app.js"></script>
 </body>
+
 </html>

@@ -7,6 +7,7 @@ import {
   MAP_CONFIG,
   PILL_CONFIG,
   REALM_CONFIG,
+  MONSTER_CONFIG,
 } from "./game-data.js";
 import { ACTION_META, CHAPTER_MONSTERS, STORY_TEXT, VILLAGE_GOSSIPS } from "./story-data.js";
 
@@ -468,6 +469,9 @@ function normalize(player) {
       moorSteps: 0,
     };
   }
+  if (!player.combat) {
+    player.combat = { isActive: false, enemy: null, logs: [] };
+  }
   if (!player.hand) {
     player.hand = randomFrom(HANDS);
   }
@@ -631,35 +635,17 @@ export function moorTraverse(player) {
   spendMonths(player, 1, "你在迷雾黑原中谨慎穿行");
   player.counters.moorSteps += 1;
   if (player.counters.moorSteps < 3) {
-    const dog = CHAPTER_MONSTERS.find((m) => m.id === 1006);
-    player.hp -= dog.attack;
-    player.maxHp = Math.max(40, player.maxHp - 1);
-    pushLog(player, `你遭遇${dog.name}，瘴气侵体，损失气血 ${dog.attack}，气血上限 -1。`, "warning");
+    return triggerCombat(player, 1006); // 触发瘴气野狗
+  }
+  
+  if (player.realmIndex < 1) {
+    pushLog(player, "血线蛇自迷雾中暴起，你尚未踏入炼气，只能仓皇退走。", "warning");
+    player.hp -= 25;
     return normalize(player);
   }
 
-  const boss = CHAPTER_MONSTERS.find((m) => m.id === 1007);
-  if (player.realmIndex < 1) {
-    player.hp -= boss.attack;
-    pushLog(player, "血线蛇自迷雾中暴起，你尚未踏入炼气，只能仓皇退走。", "warning");
-    return normalize(player);
-  }
-  if (player.spirit < 5) {
-    player.hp -= 20;
-    pushLog(player, "你虽能施展火弹术，却法力枯竭，被血线蛇逼退。", "warning");
-    return normalize(player);
-  }
-  player.spirit -= 5;
-  player.hp -= 12;
-  player.inventory["凝血草"] = (player.inventory["凝血草"] || 0) + 1;
-  player.inventory["下品灵石"] = (player.inventory["下品灵石"] || 0) + 1;
   player.storyFlags.moorCleared = true;
-  pushLog(
-    player,
-    "你以火弹术强轰血线蛇，蛇鳞被灼穿，终于将其斩杀。获得凝血草 x1、下品灵石 x1。",
-    "positive"
-  );
-  return normalize(player);
+  return triggerCombat(player, 1007); // 触发Boss血线蛇
 }
 
 export function awakenAtTainan(player) {
@@ -958,4 +944,148 @@ export function parseSave(raw) {
     },
     logs: Array.isArray(data.logs) ? data.logs : [],
   });
+}
+
+
+// ================= 战斗与坊市系统逻辑 =================
+
+export function triggerCombat(player, monsterId) {
+  const monsterData = MONSTER_CONFIG.find((m) => m.id === monsterId);
+  if (!monsterData) return normalize(player);
+  
+  player.combat = {
+    isActive: true,
+    enemy: { ...monsterData, currentHp: monsterData.hp },
+    logs: [`遭遇了 ${monsterData.name}！境界模糊，似有杀气。`]
+  };
+  pushLog(player, `[⚠️警告] 遭遇强敌 ${monsterData.name}，强行切入斗法！`, "warning");
+  return normalize(player);
+}
+
+export function executeCombatAction(player, actionType) {
+  if (!player.combat || !player.combat.isActive) return player;
+  
+  const enemy = player.combat.enemy;
+  let playerDamage = 0;
+  let actionLog = "";
+  let escaped = false;
+
+  switch (actionType) {
+    case "spell":
+      if (player.spirit < 5) {
+        actionLog = "法力不足 5 点，火弹术施展失败！";
+      } else {
+        player.spirit -= 5;
+        playerDamage = 20; 
+        actionLog = `你施展火弹术，一团烈火砸中对方，造成 ${playerDamage} 点真伤。`;
+      }
+      break;
+    case "artifact":
+      const weapon = getEquippedItem(player, "weapon");
+      if (!weapon) {
+        actionLog = "你未装备法器，双拳难敌四手！";
+        playerDamage = getAttack(player);
+      } else if (player.spirit < weapon.manaCost) {
+        actionLog = `法力不足以驱使 ${weapon.name}！`;
+      } else {
+        player.spirit -= weapon.manaCost;
+        let dmg = getAttack(player);
+        if (weapon.type === "凡人兵器" && enemy.trait.includes("蛇鳞")) Math.floor(dmg /= 2);
+        playerDamage = dmg;
+        actionLog = `你驱使 ${weapon.name} 猛攻，造成 ${playerDamage} 点伤害！`;
+      }
+      break;
+    case "talisman":
+      if ((player.inventory["火龙符"] || 0) <= 0) {
+        actionLog = "你储物袋中已无火龙符！";
+      } else {
+        player.inventory["火龙符"] -= 1;
+        playerDamage = 50; 
+        actionLog = `你砸出一张火龙符！化作火龙吞噬对方，造成 ${playerDamage} 点伤害！`;
+      }
+      break;
+    case "beg":
+      if (player.silver > 0 || player.stones > 0) {
+        player.silver = 0;
+        player.stones = Math.floor(player.stones / 2);
+        actionLog = "你丢出灵石与银两，趁对方抢夺之际狼狈逃离！";
+        escaped = true;
+      } else {
+        actionLog = "你穷得叮当响，对方嫌弃地拒绝了你的求饶！";
+      }
+      break;
+    case "blood_escape":
+      player.age += 5; 
+      player.maxHp = Math.floor(player.maxHp * 0.8); 
+      player.hp = Math.min(player.hp, player.maxHp);
+      actionLog = "你咬破舌尖施展血遁术！损失 5 年寿元与气血本源，化作血光遁走！";
+      escaped = true;
+      break;
+  }
+
+  player.combat.logs.push(`> [你] ${actionLog}`);
+  if (playerDamage > 0) enemy.currentHp -= playerDamage;
+
+  if (escaped) {
+    player.combat.isActive = false;
+    pushLog(player, "你惊险逃脱了战斗，捡回一条命。");
+    return normalize(player);
+  }
+
+  if (enemy.currentHp <= 0) {
+    player.combat.isActive = false;
+    let lootLog = `你击杀了 ${enemy.name}！`;
+    if (Math.random() <= enemy.dropRate && enemy.loot) {
+      const loots = enemy.loot.split("/").map(s => s.trim().split(" ")[0]);
+      loots.forEach(l => {
+        player.inventory[l] = (player.inventory[l] || 0) + 1;
+        lootLog += ` 获得 ${l}。`;
+      });
+    }
+    pushLog(player, lootLog, "positive");
+    return normalize(player);
+  }
+
+  const def = getDefense(player);
+  const finalEnemyDmg = Math.max(1, enemy.attack - def);
+  player.hp -= finalEnemyDmg;
+  player.combat.logs.push(`> [敌] ${enemy.name} 发起反击，造成 ${finalEnemyDmg} 点伤害。`);
+  
+  if (enemy.trait.includes("剧毒")) {
+    player.hp -= 2;
+    player.combat.logs.push(`> [敌] 毒气侵体，额外损失 2 点气血。`);
+  }
+
+  if (player.hp <= 0) {
+    player.combat.isActive = false;
+    pushLog(player, `你被 ${enemy.name} 击杀，道消身死。`, "warning");
+  }
+  return normalize(player);
+}
+
+export function tainanMarket(player) {
+  spendMonths(player, 0.03, "你在坊市地摊区闲逛");
+  const roll = Math.random();
+  if (roll < 0.2 && player.stones >= 5) {
+    player.stones -= 5;
+    pushLog(player, "你轻信散修，花 5 块灵石买了一株『玉髓芝』，仔细一看竟是染色萝卜！", "warning");
+  } else if (roll < 0.4 && player.stones >= 10) {
+    player.stones -= 10;
+    player.inventory["火龙符"] = (player.inventory["火龙符"] || 0) + 1;
+    pushLog(player, "你眼力极佳，花 10 块灵石淘到一张完好的【火龙符】！", "positive");
+  } else {
+    pushLog(player, "逛了半天，尽是些破铜烂铁，毫无收获。");
+  }
+  return normalize(player);
+}
+
+export function leaveBlackMarket(player) {
+  if (Math.random() < 0.3) {
+    pushLog(player, "你刚走出黑市，神识察觉到一道阴冷的目光锁定了你...", "warning");
+    return triggerCombat(player, 1005); // 暂时代替劫修
+  } else {
+    pushLog(player, "你施展敛气术，在坊市巷弄里绕了几圈，安全甩掉了尾巴。");
+    player.currentNodeId = "map-6006"; // 回到太南谷
+    return normalize(player);
+  }
 }
