@@ -1,0 +1,10 @@
+{
+  "name": "凡人流文字修仙",
+  "short_name": "凡人修仙",
+  "description": "凡人流文字修仙游戏，响应式三端共用原型。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#15120f",
+  "theme_color": "#15120f",
+  "lang": "zh-CN"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "韩丽",
+  "realm_index": 0,
+  "hp": 100,
+  "max_hp": 100,
+  "spirit": 49,
+  "max_spirit": 60,
+  "attack": 12,
+  "defense": 6,
+  "cultivation": 55,
+  "cultivation_needed": 100,
+  "stones": 55,
+  "reputation": 0,
+  "days": 6,
+  "inventory": {
+    "回气丹": 2,
+    "小还丹": 2,
+    "聚灵丹": 1,
+    "破境丹": 0
+  }
+}

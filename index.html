@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#15120f">
+  <title>凡人流文字修仙</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="panic-bar">
+    <div class="panic-left">
+      <span class="panic-name" id="player-name">未入道者</span>
+      <span class="panic-realm" id="realm-badge">凡人</span>
+      <span class="panic-age">寿元 <strong id="lifespan-text">0 岁</strong></span>
+      <span class="panic-age">已活 <strong id="age-text">0 岁</strong></span>
+    </div>
+    <div class="panic-right">
+      <span class="panic-chip">法力 <strong id="spirit-text">0 / 0</strong></span>
+      <span class="panic-chip">丹毒 <strong id="dan-poison-text">0</strong></span>
+      <span class="panic-chip">灵石 <strong id="stones-text">0</strong></span>
+      <button id="save-btn" class="ghost-btn small-btn">手动存档</button>
+      <button id="new-game-btn" class="primary-btn small-btn">重开此生</button>
+    </div>
+  </header>
+
+  <main class="main-shell">
+    <section id="page-main" class="page-panel is-active">
+      <section class="hub-layout">
+        <aside class="panel left-rail">
+        <div class="panel-top-tag">
+          <span class="realm-badge">位于 <strong id="node-top-name">青石村</strong></span>
+          <span id="node-zone" class="realm-badge">安全区</span>
+        </div>
+
+        <div class="identity-block">
+          <div class="identity-main">
+            <span id="aptitude-text">伪灵根</span>
+          </div>
+          <div class="identity-sub">
+            <span>灵根</span>
+            <strong id="roots-text">金20 / 木18</strong>
+          </div>
+        </div>
+
+        <div class="bar-grid">
+          <div class="resource-bar-card">
+            <div class="resource-head compact-head"><span>血</span><strong id="hp-text">0 / 0</strong></div>
+            <div class="progress-track blood"><div id="hp-bar" class="progress-fill"></div></div>
+          </div>
+          <div class="resource-bar-card">
+            <div class="resource-head compact-head"><span>法</span><strong id="spirit-bar-text">0 / 0</strong></div>
+            <div class="progress-track mana"><div id="spirit-bar" class="progress-fill"></div></div>
+          </div>
+          <div class="resource-bar-card">
+            <div class="resource-head compact-head"><span>修</span><strong id="cultivation-text">0 / 0</strong></div>
+            <div class="progress-track"><div id="cultivation-bar" class="progress-fill"></div></div>
+          </div>
+        </div>
+
+        <div class="key-stats">
+          <div class="stat-chip"><span>攻</span><strong id="attack-text">0</strong></div>
+          <div class="stat-chip"><span>防</span><strong id="defense-text">0</strong></div>
+          <div class="stat-chip"><span>声望</span><strong id="reputation-text">0</strong></div>
+          <div class="stat-chip"><span>悟性</span><strong id="comprehension-text">0</strong></div>
+          <div class="stat-chip"><span>体质</span><strong id="physique-text">0</strong></div>
+          <div class="stat-chip"><span>心性</span><strong id="mindset-text">0</strong></div>
+          <div class="stat-chip"><span>机缘</span><strong id="fortune-text">0</strong></div>
+        </div>
+
+        <div class="panel-subsection">
+          <div class="panel-subtitle">当前位置</div>
+          <button class="node-card node-toggle-card" id="node-toggle-btn" type="button">
+            <strong id="node-name">青石村</strong>
+            <p id="node-description">描述</p>
+            <div class="node-foot">
+              <span>下一站：<span id="next-node-text">无名后山 · 1 个月</span></span>
+              <span id="node-toggle-text">展开路线</span>
+            </div>
+          </button>
+          <ol id="map-list" class="map-list collapsible-map"></ol>
+        </div>
+        </aside>
+      </section>
+
+      <section class="command-panel">
+        <div class="command-head">
+          <h2>行动</h2>
+          <div class="command-head-right">
+            <span id="current-action-text" class="realm-badge">当前无持续行动</span>
+            <button id="stop-action-btn" class="ghost-btn small-btn">停止当前行动</button>
+          </div>
+        </div>
+        <p id="action-hint" class="action-hint"></p>
+        <div id="main-command-grid" class="command-grid"></div>
+      </section>
+
+      <section class="panel center-log-panel">
+        <div id="log-list" class="log-console"></div>
+      </section>
+    </section>
+
+    <section id="page-cave" class="page-panel">
+      <aside class="panel right-rail">
+        <div class="panel-top-tag">
+          <span class="realm-badge">效率透明</span>
+        </div>
+        <div class="cultivation-card">
+          <div class="cultivation-line"><span>当前金手指</span><strong id="hand-name">造化之瓶</strong></div>
+          <div class="cultivation-line"><span>流派</span><strong id="hand-style">灵农大亨流</strong></div>
+          <p id="hand-description" class="cultivation-note">描述</p>
+          <div class="cultivation-line"><span>突破提示</span><strong id="breakthrough-hint">条件</strong></div>
+        </div>
+
+        <div class="panel-subsection">
+          <div class="panel-subtitle">当前穿戴</div>
+          <ul id="equipment-summary-list" class="inventory-list compact-list"></ul>
+        </div>
+
+        <div class="panel-subsection">
+          <div class="panel-subtitle">装备栏</div>
+          <ul id="equipment-list" class="inventory-list"></ul>
+        </div>
+
+        <div class="panel-subsection">
+          <div class="panel-subtitle">背包</div>
+          <label class="import-label">
+            导入存档
+            <input id="import-input" type="file" accept="application/json">
+          </label>
+          <div class="inventory-tabs">
+            <button class="inventory-tab is-active" data-inventory-tab="items">丹药</button>
+            <button class="inventory-tab" data-inventory-tab="equipment">装备</button>
+          </div>
+          <section id="inventory-items-panel" class="inventory-tab-panel is-active">
+            <ul id="inventory-list" class="inventory-grid"></ul>
+          </section>
+          <section id="inventory-equipment-panel" class="inventory-tab-panel">
+            <ul id="equipment-bag-list" class="inventory-grid"></ul>
+          </section>
+        </div>
+      </aside>
+      <section class="command-panel">
+        <div class="command-head">
+          <h2>修炼</h2>
+          <div class="command-head-right">
+            <span class="realm-badge">修炼页</span>
+          </div>
+        </div>
+        <p class="action-hint">洞府页聚焦闭关、炼丹、突破。点击后持续自动执行，直到手动停止。</p>
+        <div id="cave-command-grid" class="command-grid"></div>
+      </section>
+    </section>
+
+    <section id="page-combat" class="page-panel">
+      <div class="panel combat-panel">
+        <div class="panel-title-row">
+          <h2>斗法</h2>
+          <span class="realm-badge">黑暗森林法则</span>
+        </div>
+        <div class="combat-layout">
+          <div class="combat-side">
+            <span>敌方</span>
+            <strong>未知散修</strong>
+            <p>境界模糊，神识威压不明，可能正在暗中窥伺你的储物袋。</p>
+          </div>
+          <div class="combat-log">
+            <div>> 麻脸汉子祭出乌龙夺，黑芒贴地而来。</div>
+            <div>> 你的玄铁飞天盾光芒狂闪，堪堪挡住一击。</div>
+            <div>> 若要真正接入文档中的斗法系统，下一步需要实现神识探查、符箓、法器与血遁。</div>
+          </div>
+          <div class="combat-actions">
+            <button class="action-btn" disabled>驱使法器</button>
+            <button class="action-btn" disabled>施展法术</button>
+            <button class="action-btn" disabled>砸出符箓</button>
+            <button class="action-btn danger-btn" disabled>交出储物袋求饶</button>
+            <button class="action-btn danger-btn" disabled>施展血遁术</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-tabbar" aria-label="底部导航">
+    <button class="page-tab is-active" data-page-tab="main">
+      <span class="tab-icon">主</span>
+      <span class="tab-label">主角</span>
+    </button>
+    <button class="page-tab" data-page-tab="cave">
+      <span class="tab-icon">洞</span>
+      <span class="tab-label">洞府</span>
+    </button>
+    <button class="page-tab" data-page-tab="combat">
+      <span class="tab-icon">斗</span>
+      <span class="tab-label">斗法</span>
+    </button>
+  </nav>
+
+  <dialog id="name-dialog" class="name-dialog">
+    <form method="dialog" class="dialog-card">
+      <h3>新建角色</h3>
+      <p>为你的凡人修士取一个名字。</p>
+      <input id="name-input" type="text" maxlength="16" placeholder="韩立">
+      <div class="dialog-actions">
+        <button value="cancel" class="ghost-btn" type="submit">取消</button>
+        <button id="confirm-name-btn" value="default" class="primary-btn" type="button">进入修途</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
