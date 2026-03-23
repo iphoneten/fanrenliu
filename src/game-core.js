@@ -12,12 +12,13 @@ import {
   MONSTER_CONFIG,
   EQUIPMENT_CONFIG,
 } from "./game-data.js";
-import { CHAPTER_MONSTERS, STORY_TEXT, VILLAGE_GOSSIPS } from "./story-data.js";
+import { CHAPTER_MONSTERS, VILLAGE_GOSSIPS } from "./story-data.js";
 
 export const REALMS = REALM_CONFIG;
 
 const MAP_ID_ALIAS = {
   "map-6001": "village",
+  "map-60015": "village-wild",
   "map-6002": "backhill",
   "map-6003": "town",
   "map-6004": "moor",
@@ -97,6 +98,7 @@ function supportedMainCommand(row) {
     "stopAction",
     "villageRest",
     "villageChat",
+    "villageWildHunt",
     "backhillSearch",
     "townSell",
     "townSmith",
@@ -228,6 +230,13 @@ function pushLog(player, text, type = "normal") {
   player.logs = player.logs.slice(0, 80);
 }
 
+function renderEventText(player, text) {
+  return String(text || "")
+    .replace(/\{handName\}/g, player.hand?.name || "")
+    .replace(/\{handDescription\}/g, player.hand?.description || "")
+    .replace(/\{playerName\}/g, player.name || "");
+}
+
 function shouldInterruptOnEvent(eventConfig) {
   const text = eventConfig.text || "";
   return eventConfig.id.includes("_Main") || text.includes("[🌟奇遇]") || text.includes("[主线]");
@@ -339,7 +348,7 @@ function dispatchEvent(player, commandAction) {
     }
   }
 
-  pushLog(player, selectedEvent.text, selectedEvent.type);
+  pushLog(player, renderEventText(player, selectedEvent.text), selectedEvent.type);
   applyEventRewards(player, selectedEvent);
   if (shouldInterruptOnEvent(selectedEvent)) {
     player.pendingInterruptMessage = "触发关键事件，当前持续行动已中断。";
@@ -424,7 +433,7 @@ export function createNewPlayer(name = "韩立") {
     `${name}以${player.aptitude}开局，主灵根为${roots[0].name}(${roots[0].purity})，寿元上限 ${player.lifespan} 岁。`,
     "positive"
   );
-  pushLog(player, `[主线] ${STORY_TEXT.opening}`);
+  dispatchEvent(player, "opening");
   pushLog(player, `你在后山得来的残器中蕴藏着${hand.name}，本局流派为${hand.style}。`, "positive");
   return normalize(player);
 }
@@ -682,6 +691,43 @@ export function villageChat(player) {
   if (!event) {
     pushLog(player, `[传闻] ${randomFrom(VILLAGE_GOSSIPS)}`);
   }
+  return normalize(player);
+}
+
+function parseCultivationFromLootText(text) {
+  const raw = String(text || "");
+  const match = raw.match(/修为\+(\d+)(?:~(\d+))?/);
+  if (!match) return 0;
+  const min = Number(match[1]);
+  const max = match[2] ? Number(match[2]) : min;
+  return randomInt(min, max);
+}
+
+function gainVillageWildLoot(player, monster) {
+  const lootText = monster.loot || "";
+  if (lootText.includes("鸡肉")) {
+    player.inventory["鸡肉"] = (player.inventory["鸡肉"] || 0) + 1;
+  }
+  if (lootText.includes("草芯束")) {
+    player.inventory["草芯束"] = (player.inventory["草芯束"] || 0) + 1;
+  }
+  const cultivationGain = parseCultivationFromLootText(lootText);
+  if (cultivationGain > 0) {
+    player.cultivation += cultivationGain;
+    pushLog(player, `你从${monster.name}身上领悟到一点粗浅吐纳法，修为 +${cultivationGain}。`, "positive");
+  }
+}
+
+export function villageWildHunt(player) {
+  spendMonths(player, 0.03, "你在青石村野外巡游打野");
+  const monster = randomFrom(CHAPTER_MONSTERS.filter((m) => m.nodeId === "village-wild"));
+  if (!monster) {
+    pushLog(player, "野外一片寂静，你绕了半天也没找到可下手的目标。");
+    return normalize(player);
+  }
+  player.hp -= monster.attack;
+  gainVillageWildLoot(player, monster);
+  pushLog(player, `你击退${monster.name}，损失气血 ${monster.attack}，拾得 ${monster.loot}。`);
   return normalize(player);
 }
 

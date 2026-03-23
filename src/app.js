@@ -30,6 +30,7 @@ import {
   townSell,
   townSmith,
   villageChat,
+  villageWildHunt,
   villageRest,
   moorTraverse,
   unequipItem,
@@ -408,6 +409,8 @@ function perform(action) {
     player = villageRest(player);
   } else if (action === "villageChat") {
     player = villageChat(player);
+  } else if (action === "villageWildHunt") {
+    player = villageWildHunt(player);
   } else if (action === "backhillSearch") {
     player = backhillSearch(player);
   } else if (action === "townSell") {

@@ -296,6 +296,7 @@ function inferCommandAction(name) {
   const mapping = {
     回屋歇息: "villageRest",
     村口闲聊: "villageChat",
+    野外打野: "villageWildHunt",
     进山搜寻: "backhillSearch",
     摆摊售卖: "townSell",
     铁匠铺: "townSmith",
@@ -400,8 +401,14 @@ export const EVENT_CONFIG = event_rows.map((row) => ({
 }));
 
 function inferEventCommand(eventId) {
+  if (eventId.startsWith("E_0001_")) {
+    return "opening";
+  }
   if (eventId.startsWith("E_6001_")) {
     return "villageChat";
+  }
+  if (eventId.startsWith("E_60015_")) {
+    return "villageWildHunt";
   }
   if (eventId.startsWith("E_6002_")) {
     return "backhillSearch";
