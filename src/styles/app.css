@@ -1,0 +1,89 @@
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+  background: #15120f;
+}
+
+body {
+  font-family: "PingFang SC", sans-serif;
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: linear-gradient(180deg, #1b1713 0%, #0f0c09 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fffaf6;
+}
+
+.auth-title {
+  margin: 0 0 16px;
+  font-size: 24px;
+}
+
+.auth-actions {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.mobile-shell,
+.page-shell {
+  min-height: 100vh;
+  background: #15120f;
+}
+
+.mobile-content {
+  min-height: calc(100vh - 50px);
+}
+
+.page-body {
+  padding: 12px 0 24px;
+}
+
+.mobile-section {
+  margin-top: 12px;
+}
+
+.section-title {
+  padding: 0 16px 8px;
+  color: #d3c1aa;
+  font-size: 13px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.action-grid-single {
+  margin-top: 8px;
+  grid-template-columns: 1fr;
+}
+
+.log-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.log-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 248, 240, 0.08);
+  color: #f4ebdd;
+  line-height: 1.5;
+  font-size: 13px;
+}
